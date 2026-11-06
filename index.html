@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Password Generator</title>
+  <meta name="description" content="Generate strong passwords, passphrases, PINs and tokens locally in your browser.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1>Password Generator</h1>
+      <p class="tagline">Everything is generated in your browser. Nothing is sent anywhere.</p>
+    </header>
+
+    <div class="tabs" role="tablist" aria-label="What to generate">
+      <button role="tab" data-mode="password" id="tab-password" aria-controls="panel-password">Password</button>
+      <button role="tab" data-mode="passphrase" id="tab-passphrase" aria-controls="panel-passphrase">Passphrase</button>
+      <button role="tab" data-mode="pin" id="tab-pin" aria-controls="panel-pin">PIN</button>
+      <button role="tab" data-mode="token" id="tab-token" aria-controls="panel-token">Dev token</button>
+    </div>
+
+    <section class="card result-card" aria-label="Result">
+      <div id="result" class="result" title="Click to copy" tabindex="0" aria-live="polite"></div>
+      <p id="error" class="error" role="alert" hidden></p>
+      <div class="strength" id="strength">
+        <div class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+        <p class="strength-text" id="strength-text"></p>
+      </div>
+      <button id="generate" class="primary">Generate me a password</button>
+      <p class="hint">Copies to your clipboard automatically. Shortcut: press <kbd>G</kbd>.</p>
+    </section>
+
+    <section class="card panel" role="tabpanel" id="panel-password" aria-labelledby="tab-password">
+      <div class="presets" aria-label="Presets">
+        <span class="presets-label">Presets</span>
+        <button class="chip" data-preset="balanced" title="16 characters, every type">Balanced</button>
+        <button class="chip" data-preset="wifi" title="No symbols or look-alike characters: easy to type on a TV remote or read aloud">Wi-Fi / TV</button>
+        <button class="chip" data-preset="env" title="No quotes, $, backslash or other characters that break .env files and shell scripts">.env / shell-safe</button>
+        <button class="chip" data-preset="url" title="Only symbols that are safe in URLs and query strings">URL-safe</button>
+        <button class="chip" data-preset="legacy" title="12 characters, only the most widely accepted symbols, for picky old sites">Legacy site</button>
+        <button class="chip" data-preset="max" title="64 characters, every type, for password managers">Maximum</button>
+      </div>
+
+      <div class="field">
+        <label for="pw-length">Length</label>
+        <div class="range-row">
+          <input type="range" id="pw-length" min="4" max="128" data-setting="password.length">
+          <input type="number" min="4" max="256" data-setting="password.length" aria-label="Length">
+        </div>
+      </div>
+
+      <fieldset class="checks">
+        <legend>Include</legend>
+        <label><input type="checkbox" data-setting="password.lower"> Lowercase <code>a-z</code></label>
+        <label><input type="checkbox" data-setting="password.upper"> Uppercase <code>A-Z</code></label>
+        <label><input type="checkbox" data-setting="password.digits"> Numbers <code>0-9</code></label>
+        <label><input type="checkbox" data-setting="password.symbols"> Symbols <code>!@#$%…</code></label>
+      </fieldset>
+
+      <div class="field">
+        <label for="pw-exclude">Exclude characters</label>
+        <input type="text" id="pw-exclude" data-setting="password.exclude" placeholder="e.g. &quot;'`\$" spellcheck="false" autocomplete="off">
+      </div>
+
+      <fieldset class="checks">
+        <legend>Rules</legend>
+        <label><input type="checkbox" data-setting="password.excludeAmbiguous"> Avoid look-alikes <code>I l 1 | O 0 o</code></label>
+        <label><input type="checkbox" data-setting="password.requireEach"> At least one of each selected type</label>
+      </fieldset>
+    </section>
+
+    <section class="card panel" role="tabpanel" id="panel-passphrase" aria-labelledby="tab-passphrase" hidden>
+      <p class="panel-intro">Random words are easier to remember and type than random characters. Good for a password manager's master password or your computer login.</p>
+      <div class="field">
+        <label for="pp-words">Words</label>
+        <div class="range-row">
+          <input type="range" id="pp-words" min="3" max="12" data-setting="passphrase.words">
+          <input type="number" min="3" max="16" data-setting="passphrase.words" aria-label="Words">
+        </div>
+      </div>
+      <div class="field">
+        <label for="pp-sep">Separator</label>
+        <select id="pp-sep" data-setting="passphrase.separator">
+          <option value="dash">Dash (-)</option>
+          <option value="dot">Dot (.)</option>
+          <option value="underscore">Underscore (_)</option>
+          <option value="space">Space</option>
+          <option value="none">None</option>
+          <option value="digits">Random digit</option>
+        </select>
+      </div>
+      <fieldset class="checks">
+        <legend>Options</legend>
+        <label><input type="checkbox" data-setting="passphrase.capitalize"> Capitalize words</label>
+        <label><input type="checkbox" data-setting="passphrase.includeNumber"> Add a number to one word</label>
+      </fieldset>
+    </section>
+
+    <section class="card panel" role="tabpanel" id="panel-pin" aria-labelledby="tab-pin" hidden>
+      <p class="panel-intro">For phones, bank cards, door codes and alarm panels.</p>
+      <div class="field">
+        <label for="pin-length">Digits</label>
+        <div class="range-row">
+          <input type="range" id="pin-length" min="4" max="12" data-setting="pin.length">
+          <input type="number" min="4" max="16" data-setting="pin.length" aria-label="Digits">
+        </div>
+      </div>
+      <fieldset class="checks">
+        <legend>Options</legend>
+        <label><input type="checkbox" data-setting="pin.avoidWeak"> Avoid obvious patterns <code>0000</code> <code>1234</code> <code>9876</code></label>
+      </fieldset>
+    </section>
+
+    <section class="card panel" role="tabpanel" id="panel-token" aria-labelledby="tab-token" hidden>
+      <p class="panel-intro">For API keys, session or JWT secrets, webhook signing keys and database IDs.</p>
+      <div class="field">
+        <label for="tok-format">Format</label>
+        <select id="tok-format" data-setting="token.format">
+          <option value="hex">Hex</option>
+          <option value="base64url">Base64 (URL-safe)</option>
+          <option value="uuid">UUID v4</option>
+        </select>
+      </div>
+      <div class="field" id="tok-bytes-field">
+        <label for="tok-bytes">Random bytes</label>
+        <select id="tok-bytes" data-setting="token.bytes">
+          <option value="16">16 bytes (128-bit)</option>
+          <option value="32">32 bytes (256-bit)</option>
+          <option value="64">64 bytes (512-bit)</option>
+        </select>
+      </div>
+    </section>
+
+    <details class="card">
+      <summary>More options</summary>
+      <div class="field">
+        <label for="count">How many to generate</label>
+        <input type="number" id="count" min="1" max="50" data-setting="count">
+      </div>
+      <div class="field">
+        <label for="autoclear">Clear clipboard after</label>
+        <select id="autoclear" data-setting="autoClear">
+          <option value="0">Never</option>
+          <option value="15">15 seconds</option>
+          <option value="30">30 seconds</option>
+          <option value="60">1 minute</option>
+        </select>
+        <small>Only works while this tab is focused.</small>
+      </div>
+      <button id="reset" class="link">Reset all settings to defaults</button>
+    </details>
+
+    <section class="card">
+      <div class="history-head">
+        <h2>Recent</h2>
+        <button id="clear-history" class="link">Clear</button>
+      </div>
+      <p class="muted small">Kept only in this tab and hidden by default. Closing the tab clears it.</p>
+      <ul id="history" class="history"></ul>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="wordlist.js"></script>
+  <script src="generator.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
